@@ -40,7 +40,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDto updateUser(long userId, UserDto userDto) {
-        checkUserById(userId);
         checkUserByIdAndEmail(userId, userDto);
         User user = userRepository.getUserById(userId);
         user.setId(userId);
@@ -61,13 +60,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void checkUserById(long userId) {
-        userRepository.getUsers().stream()
-                .filter(userDto -> userDto.getId() == userId)
-                .findFirst()
-                .orElseThrow(() -> {
-                    log.info(String.format("Пользователь с id %s не найден", userId));
-                    return new NotFoundException(String.format("Пользователь с id %s не найден", userId));
-                });
+        if (userRepository.getUserById(userId) == null) {
+            log.info(String.format("Пользователь с id %s не найден", userId));
+            throw new NotFoundException(String.format("Пользователь с id %s не найден", userId));
+        }
     }
 
     @Override

@@ -90,13 +90,10 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public void checkItemById(long itemId) {
-        itemRepository.getItems().stream()
-                .filter(item -> item.getId() == itemId)
-                .findFirst()
-                .orElseThrow(() -> {
-                    log.info(String.format("Вещь с id %s не найдена", itemId));
-                    return new NotFoundException(String.format("Вещь с id %s не найдена", itemId));
-                });
+        if (itemRepository.getItemById(itemId) == null) {
+            log.info(String.format("Вещь с id %s не найдена", itemId));
+            throw new NotFoundException(String.format("Вещь с id %s не найдена", itemId));
+        }
     }
 
     @Override
