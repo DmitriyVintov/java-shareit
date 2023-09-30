@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.exception.Marker;
+import ru.practicum.shareit.item.dto.CommentCreateDto;
+import ru.practicum.shareit.item.dto.CommentFullDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.service.ItemService;
 
@@ -27,15 +29,16 @@ public class ItemController {
     }
 
     @GetMapping("/{itemId}")
-    public ItemDto getById(@PathVariable long itemId) {
+    public ItemDto getById(@RequestHeader("X-Sharer-User-Id") Long userId,
+                           @PathVariable long itemId) {
         log.info(String.format("Поступил запрос на получение вещи id %s", itemId));
-        return itemService.getItemById(itemId);
+        return itemService.getItemById(itemId, userId);
     }
 
     @Validated(Marker.OnCreate.class)
     @PostMapping
     public ItemDto add(@RequestHeader("X-Sharer-User-Id") Long userId,
-                    @Valid @RequestBody ItemDto itemDto) {
+                       @Valid @RequestBody ItemDto itemDto) {
         log.info(String.format("Поступил запрос от пользователя id %s на создание вещи: %s", userId, itemDto));
         return itemService.addItem(userId, itemDto);
     }
@@ -60,5 +63,13 @@ public class ItemController {
                                 @RequestParam String text) {
         log.info(String.format("Поступил запрос на поиск вещи по ключевому слову: %s", text));
         return itemService.search(userId, text);
+    }
+
+    @PostMapping("/{itemId}/comment")
+    public CommentFullDto addComment(@RequestHeader("X-Sharer-User-Id") Long userId,
+                                     @PathVariable long itemId,
+                                     @Valid @RequestBody CommentCreateDto commentCreateDto) {
+        log.info(String.format("Поступил запрос от пользователя id %s на создание комментария для вещи id %s: %s", userId, itemId, commentCreateDto));
+        return itemService.addComment(userId, itemId, commentCreateDto);
     }
 }

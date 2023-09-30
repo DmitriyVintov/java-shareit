@@ -6,8 +6,8 @@ import org.springframework.stereotype.Service;
 import ru.practicum.shareit.exception.DataAlreadyExistException;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.model.UserMapper;
 import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.util.List;
@@ -21,27 +21,29 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<UserDto> getUsers() {
-        return userRepository.getUsers().stream()
-                .map(UserMapper::toUserDto)
+        return userRepository.findAll().stream()
+                .map(UserMapper.INSTANCE::toUserDto)
                 .collect(Collectors.toList());
     }
 
     @Override
     public UserDto getUserById(long userId) {
-        checkUserById(userId);
-        return UserMapper.toUserDto(userRepository.getUserById(userId));
+        return UserMapper.INSTANCE.toUserDto(userRepository.findById(userId).orElseThrow(() -> {
+            String errorMessage = String.format("Пользователь id %s не найден", userId);
+            log.error(errorMessage);
+            return new NotFoundException(errorMessage);
+        }));
     }
 
     @Override
     public UserDto addUser(UserDto userDto) {
-        checkUserByEmail(userDto);
-        return UserMapper.toUserDto(userRepository.addUser(UserMapper.toUser(userDto)));
+        return UserMapper.INSTANCE.toUserDto(userRepository.save(UserMapper.INSTANCE.toUser(userDto)));
     }
 
     @Override
     public UserDto updateUser(long userId, UserDto userDto) {
         checkUserByIdAndEmail(userId, userDto);
-        User user = userRepository.getUserById(userId);
+        User user = UserMapper.INSTANCE.toUser(getUserById(userId));
         user.setId(userId);
         if (userDto.getName() != null) {
             user.setName(userDto.getName());
@@ -49,45 +51,23 @@ public class UserServiceImpl implements UserService {
         if (userDto.getEmail() != null) {
             user.setEmail(userDto.getEmail());
         }
-        return UserMapper.toUserDto(userRepository.updateUser(user));
+        return UserMapper.INSTANCE.toUserDto(userRepository.save(user));
     }
 
     @Override
     public void deleteUser(long userId) {
-        checkUserById(userId);
-        userRepository.deleteUser(userId);
+        getUserById(userId);
+        userRepository.deleteById(userId);
     }
 
-    @Override
-    public void checkUserById(long userId) {
-        if (userRepository.getUserById(userId) == null) {
-            log.info(String.format("Пользователь с id %s не найден", userId));
-            throw new NotFoundException(String.format("Пользователь с id %s не найден", userId));
-        }
-    }
-
-    @Override
-    public void checkUserByEmail(UserDto userDto) {
-        List<UserDto> collect = userRepository.getUsers().stream()
-                .map(UserMapper::toUserDto)
-                .filter(userDto1 -> userDto1.getEmail().equals(userDto.getEmail()))
+    private void checkUserByIdAndEmail(long userId, UserDto userDto) {
+        List<UserDto> collect = userRepository.findAllByIdNotAndEmail(userId, userDto.getEmail()).stream()
+                .map(UserMapper.INSTANCE::toUserDto)
                 .collect(Collectors.toList());
         if (!collect.isEmpty()) {
-            log.error(String.format("Пользователь с email %s уже существует", userDto.getEmail()));
-            throw new DataAlreadyExistException(String.format("Пользователь с email %s уже существует", userDto.getEmail()));
-        }
-    }
-
-    @Override
-    public void checkUserByIdAndEmail(long userId, UserDto userDto) {
-        List<UserDto> collect = userRepository.getUsers().stream()
-                .map(UserMapper::toUserDto)
-                .filter(userDto1 -> userDto1.getId() != userId)
-                .filter(userDto1 -> userDto1.getEmail().equals(userDto.getEmail()))
-                .collect(Collectors.toList());
-        if (!collect.isEmpty()) {
-            log.error(String.format("Пользователь с id %s и email %s уже существует", userId, userDto.getEmail()));
-            throw new DataAlreadyExistException(String.format("Пользователь с id %s и email %s уже существует", userId, userDto.getEmail()));
+            String errorMessage = String.format("Пользователь id %s с email %s уже существует", userId, userDto.getEmail());
+            log.error(errorMessage);
+            throw new DataAlreadyExistException(errorMessage);
         }
     }
 }

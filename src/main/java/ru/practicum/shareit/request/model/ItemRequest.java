@@ -8,9 +8,6 @@ import ru.practicum.shareit.user.model.User;
 import javax.validation.constraints.PastOrPresent;
 import java.time.LocalDateTime;
 
-/**
- * TODO Sprint add-item-requests.
- */
 @Data
 @RequiredArgsConstructor
 @Validated

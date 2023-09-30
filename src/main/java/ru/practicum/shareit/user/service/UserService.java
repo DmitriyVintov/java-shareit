@@ -14,10 +14,4 @@ public interface UserService {
     UserDto updateUser(long userId, UserDto userDto);
 
     void deleteUser(long userId);
-
-    void checkUserById(long userId);
-
-    void checkUserByEmail(UserDto userDto);
-
-    void checkUserByIdAndEmail(long userId, UserDto userDto);
 }
