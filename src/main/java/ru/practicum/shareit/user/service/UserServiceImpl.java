@@ -2,9 +2,11 @@ package ru.practicum.shareit.user.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.exception.DataAlreadyExistException;
 import ru.practicum.shareit.exception.NotFoundException;
+import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
@@ -37,12 +39,26 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDto addUser(UserDto userDto) {
-        return UserMapper.INSTANCE.toUserDto(userRepository.save(UserMapper.INSTANCE.toUser(userDto)));
+        User user;
+        try {
+            user = userRepository.save(UserMapper.INSTANCE.toUser(userDto));
+        } catch (Throwable e) {
+            String errorMessage = String.format("Пользователь с %s и %s уже существует", userDto.getName(), userDto.getEmail());
+            log.error(errorMessage);
+            throw new DataIntegrityViolationException(errorMessage);
+        }
+        return UserMapper.INSTANCE.toUserDto(user);
     }
 
     @Override
     public UserDto updateUser(long userId, UserDto userDto) {
         checkUserByIdAndEmail(userId, userDto);
+        if ((userDto.getEmail() != null && userDto.getEmail().isBlank())
+                || (userDto.getName() != null && userDto.getName().isBlank())) {
+            String errorMessage = "Имя пользователя и email не могут быть пустыми";
+            log.error(errorMessage);
+            throw new ValidationException(errorMessage);
+        }
         User user = UserMapper.INSTANCE.toUser(getUserById(userId));
         user.setId(userId);
         if (userDto.getName() != null) {
@@ -61,10 +77,7 @@ public class UserServiceImpl implements UserService {
     }
 
     private void checkUserByIdAndEmail(long userId, UserDto userDto) {
-        List<UserDto> collect = userRepository.findAllByIdNotAndEmail(userId, userDto.getEmail()).stream()
-                .map(UserMapper.INSTANCE::toUserDto)
-                .collect(Collectors.toList());
-        if (!collect.isEmpty()) {
+        if (userRepository.existsByIdNotAndEmail(userId, userDto.getEmail())) {
             String errorMessage = String.format("Пользователь id %s с email %s уже существует", userId, userDto.getEmail());
             log.error(errorMessage);
             throw new DataAlreadyExistException(errorMessage);

@@ -35,6 +35,7 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public BookingFullDto addBooking(long bookerId, BookingCreateDto bookingCreateDto) {
         checkExistUser(bookerId);
+        checkDateEndIsAfterStart(bookingCreateDto);
         Long itemId = bookingCreateDto.getItemId();
         Item item = ItemMapper.INSTANCE.toItem(itemService.getItemById(itemId, bookerId));
         Long ownerId = item.getOwner().getId();
@@ -167,6 +168,26 @@ public class BookingServiceImpl implements BookingService {
             String errorMessage = String.format("Пользователь id %s не является владельцем вещи", userId);
             log.error(errorMessage);
             throw new NotFoundException(errorMessage);
+        }
+    }
+
+    private void checkDateEndIsAfterStart(BookingCreateDto bookingCreateDto) {
+        LocalDateTime start = bookingCreateDto.getStart();
+        LocalDateTime end = bookingCreateDto.getEnd();
+        if (start == null || end == null) {
+            String errorMessage = "Даты начала и окончания бронирования не могут быть пустыми";
+            log.error(errorMessage);
+            throw new NotFoundException(errorMessage);
+        }
+        if (start.isAfter(end)) {
+            String errorMessage = "Дата начала бронирования не может быть позже даты окончания бронирования";
+            log.error(errorMessage);
+            throw new ValidationException(errorMessage);
+        }
+        if (start.equals(end)) {
+            String errorMessage = "Даты начала и окончания бронирования не могут совпадать";
+            log.error(errorMessage);
+            throw new ValidationException(errorMessage);
         }
     }
 }

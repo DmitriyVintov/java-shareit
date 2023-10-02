@@ -3,6 +3,7 @@ package ru.practicum.shareit.item.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.model.StatusBooking;
 import ru.practicum.shareit.booking.repository.BookingRepository;
 import ru.practicum.shareit.exception.NotFoundException;
@@ -56,12 +57,18 @@ public class ItemServiceImpl implements ItemService {
         LocalDateTime currentTime = LocalDateTime.now();
         return ItemMapper.INSTANCE.toItemDto(itemRepository.findById(itemId)
                 .map(item -> {
-                    item.setLastBooking(bookingRepository.findFirstBookingByItemIdAndItem_OwnerIdAndStatusNotAndStartBeforeOrderByStartDesc(
-                            itemId, userId, StatusBooking.REJECTED, currentTime
-                    ).orElse(null));
-                    item.setNextBooking(bookingRepository.findFirstBookingByItemIdAndItem_OwnerIdAndStatusNotAndStartAfterOrderByStart(
-                            itemId, userId, StatusBooking.REJECTED, currentTime
-                    ).orElse(null));
+                    List<Booking> lastBooking = bookingRepository.findLastBookingByOwnerId(itemId, userId, StatusBooking.REJECTED, currentTime);
+                    if (!lastBooking.isEmpty()) {
+                        item.setLastBooking(lastBooking.get(0));
+                    } else {
+                        item.setLastBooking(null);
+                    }
+                    List<Booking> nextBooking = bookingRepository.findNextBookingByOwnerId(itemId, userId, StatusBooking.REJECTED, currentTime);
+                    if (!nextBooking.isEmpty()) {
+                        item.setNextBooking(nextBooking.get(0));
+                    } else {
+                        item.setNextBooking(null);
+                    }
                     item.setComments(commentRepository.findAllByItemId(itemId));
                     return item;
                 }).orElseThrow(() -> {

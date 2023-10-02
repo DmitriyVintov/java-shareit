@@ -5,7 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.validation.annotation.Validated;
-import ru.practicum.shareit.booking.validate.DateEndAfterDateStart;
 
 import javax.validation.constraints.FutureOrPresent;
 import javax.validation.constraints.NotNull;
@@ -16,7 +15,6 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Validated
-@DateEndAfterDateStart
 public class BookingCreateDto {
     private Long id;
     @NotNull(message = "Время начала бронирования должно быть заполнено")

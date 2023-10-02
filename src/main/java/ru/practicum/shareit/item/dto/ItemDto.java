@@ -6,6 +6,7 @@ import ru.practicum.shareit.exception.Marker;
 import ru.practicum.shareit.item.validate.NullOrNotBlank;
 
 import javax.validation.constraints.NotNull;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -37,5 +38,7 @@ public class ItemDto {
     public static class BookingDto {
         long id;
         long bookerId;
+        LocalDateTime start;
+        LocalDateTime end;
     }
 }
