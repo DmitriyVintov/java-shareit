@@ -41,7 +41,6 @@ class ItemControllerTest {
     @Autowired
     ObjectMapper mapper;
     private final EasyRandom random = new EasyRandom();
-    private final String HEADER_USER_ID = "X-Sharer-User-Id";
 
     @Test
     @DisplayName("Получение всех вещей")
@@ -51,7 +50,7 @@ class ItemControllerTest {
         when(itemService.getItems(Mockito.anyLong(), Mockito.any(Pageable.class))).thenReturn(itemsDto);
 
         mvc.perform(get("/items")
-                        .header(HEADER_USER_ID, userId)
+                        .header("X-Sharer-User-Id", userId)
                         .characterEncoding(StandardCharsets.UTF_8)
                         .accept(MediaType.ALL_VALUE))
                 .andExpect(status().isOk())
@@ -74,7 +73,7 @@ class ItemControllerTest {
         when(itemService.getItemById(Mockito.anyLong(), Mockito.anyLong())).thenReturn(itemDto);
 
         mvc.perform(get("/items/{itemId}", itemDto.getId())
-                        .header(HEADER_USER_ID, 1L)
+                        .header("X-Sharer-User-Id", 1L)
                         .characterEncoding(StandardCharsets.UTF_8)
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.ALL_VALUE))
@@ -94,7 +93,7 @@ class ItemControllerTest {
         when(itemService.getItemById(Mockito.anyLong(), Mockito.anyLong())).thenThrow(NotFoundException.class);
 
         mvc.perform(get("/items/{itemId}", itemDto.getId())
-                        .header(HEADER_USER_ID, 1L)
+                        .header("X-Sharer-User-Id", 1L)
                         .characterEncoding(StandardCharsets.UTF_8)
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.ALL_VALUE))
@@ -109,7 +108,7 @@ class ItemControllerTest {
         when(itemService.addItem(Mockito.anyLong(), Mockito.any(ItemDto.class))).thenReturn(itemDto);
 
         mvc.perform(post("/items")
-                        .header(HEADER_USER_ID, userId)
+                        .header("X-Sharer-User-Id", userId)
                         .content(mapper.writeValueAsString(itemDto))
                         .characterEncoding(StandardCharsets.UTF_8)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -131,7 +130,7 @@ class ItemControllerTest {
         when(itemService.addItem(Mockito.anyLong(), Mockito.any(ItemDto.class))).thenThrow(DataAlreadyExistException.class);
 
         mvc.perform(post("/items")
-                        .header(HEADER_USER_ID, userId)
+                        .header("X-Sharer-User-Id", userId)
                         .content(mapper.writeValueAsString(itemDto))
                         .characterEncoding(StandardCharsets.UTF_8)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -148,7 +147,7 @@ class ItemControllerTest {
         when(itemService.addItem(Mockito.anyLong(), Mockito.any(ItemDto.class))).thenThrow(ConstraintViolationException.class);
 
         mvc.perform(post("/items")
-                        .header(HEADER_USER_ID, userId)
+                        .header("X-Sharer-User-Id", userId)
                         .content(mapper.writeValueAsString(itemDto))
                         .characterEncoding(StandardCharsets.UTF_8)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -164,7 +163,7 @@ class ItemControllerTest {
         when(itemService.addItem(Mockito.anyLong(), Mockito.any(ItemDto.class))).thenThrow(ValidationException.class);
 
         mvc.perform(post("/items")
-                        .header(HEADER_USER_ID, userId)
+                        .header("X-Sharer-User-Id", userId)
                         .content(mapper.writeValueAsString(itemDto))
                         .characterEncoding(StandardCharsets.UTF_8)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -180,7 +179,7 @@ class ItemControllerTest {
         when(itemService.updateItem(Mockito.anyLong(), Mockito.any(ItemDto.class), Mockito.anyLong())).thenReturn(itemDto);
 
         mvc.perform(patch("/items/{itemId}", itemDto.getId())
-                        .header(HEADER_USER_ID, userId)
+                        .header("X-Sharer-User-Id", userId)
                         .content(mapper.writeValueAsString(itemDto))
                         .characterEncoding(StandardCharsets.UTF_8)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -204,7 +203,7 @@ class ItemControllerTest {
         when(itemService.search(Mockito.anyLong(), Mockito.anyString(), Mockito.any(Pageable.class))).thenReturn(itemsDto);
 
         mvc.perform(get("/items/search")
-                        .header(HEADER_USER_ID, itemsDto.get(0).getOwner().getId())
+                        .header("X-Sharer-User-Id", itemsDto.get(0).getOwner().getId())
                         .param("text", text)
                         .characterEncoding(StandardCharsets.UTF_8)
                         .accept(MediaType.ALL_VALUE))
@@ -228,7 +227,7 @@ class ItemControllerTest {
         when(itemService.addComment(Mockito.anyLong(), Mockito.anyLong(), Mockito.any(CommentCreateDto.class))).thenReturn(commentFullDto);
 
         mvc.perform(post("/items/{itemId}/comment", itemDto.getId())
-                        .header(HEADER_USER_ID, userId)
+                        .header("X-Sharer-User-Id", userId)
                         .content(mapper.writeValueAsString(commentCreateDto))
                         .characterEncoding(StandardCharsets.UTF_8)
                         .contentType(MediaType.APPLICATION_JSON)

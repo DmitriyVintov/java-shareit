@@ -37,7 +37,6 @@ class ItemRequestControllerTest {
     @Autowired
     private ObjectMapper mapper;
     private final EasyRandom random = new EasyRandom();
-    private final String HEADER_USER_ID = "X-Sharer-User-Id";
 
     @Test
     @DisplayName("Создание запроса вещи")
@@ -50,7 +49,7 @@ class ItemRequestControllerTest {
         when(itemRequestService.addItemRequest(userId, itemRequestCreateDto)).thenReturn(itemRequestFullDto);
 
         mvc.perform(post("/requests")
-                        .header(HEADER_USER_ID, userId)
+                        .header("X-Sharer-User-Id", userId)
                         .content(mapper.writeValueAsString(itemRequestCreateDto))
                         .characterEncoding(StandardCharsets.UTF_8)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -76,7 +75,7 @@ class ItemRequestControllerTest {
         when(itemRequestService.getItemRequestsByRequestorId(Mockito.anyLong())).thenReturn(itemRequests);
 
         mvc.perform(get("/requests")
-                        .header(HEADER_USER_ID, requestorId)
+                        .header("X-Sharer-User-Id", requestorId)
                         .characterEncoding(StandardCharsets.UTF_8)
                         .accept(MediaType.ALL_VALUE))
                 .andExpect(status().isOk())
@@ -101,7 +100,7 @@ class ItemRequestControllerTest {
         when(itemRequestService.getItemRequestsAll(Mockito.anyLong(), Mockito.any(Pageable.class))).thenReturn(itemRequests);
 
         mvc.perform(get("/requests/all")
-                        .header(HEADER_USER_ID, 1L)
+                        .header("X-Sharer-User-Id", 1L)
                         .characterEncoding(StandardCharsets.UTF_8)
                         .accept(MediaType.ALL_VALUE))
                 .andExpect(status().isOk())
@@ -121,7 +120,7 @@ class ItemRequestControllerTest {
         when(itemRequestService.getItemRequestById(Mockito.anyLong(), Mockito.anyLong())).thenReturn(itemRequestFullDto);
 
         mvc.perform(get("/requests/{requestId}", requestId)
-                        .header(HEADER_USER_ID, requestorId)
+                        .header("X-Sharer-User-Id", requestorId)
                         .characterEncoding(StandardCharsets.UTF_8)
                         .accept(MediaType.ALL_VALUE))
                 .andExpect(status().isOk())

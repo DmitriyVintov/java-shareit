@@ -36,7 +36,6 @@ class BookingControllerTest {
     @Autowired
     private ObjectMapper mapper;
     private final EasyRandom random = new EasyRandom();
-    private final String HEADER_USER_ID = "X-Sharer-User-Id";
 
     @Test
     @DisplayName("Создание бронирования")
@@ -51,7 +50,7 @@ class BookingControllerTest {
         when(bookingService.addBooking(Mockito.anyLong(), Mockito.any(BookingCreateDto.class))).thenReturn(bookingFullDto);
 
         mvc.perform(post("/bookings")
-                        .header(HEADER_USER_ID, userId)
+                        .header("X-Sharer-User-Id", userId)
                         .content(mapper.writeValueAsString(bookingCreateDto))
                         .characterEncoding(StandardCharsets.UTF_8)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -75,7 +74,7 @@ class BookingControllerTest {
         when(bookingService.approvedOrRejectedBooking(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyBoolean())).thenReturn(bookingFullDto);
 
         mvc.perform(patch("/bookings/{bookingId}", booking.getId())
-                        .header(HEADER_USER_ID, userId)
+                        .header("X-Sharer-User-Id", userId)
                         .content(mapper.writeValueAsString(bookingCreateDto))
                         .param("approved", String.valueOf(true))
                         .characterEncoding(StandardCharsets.UTF_8)
@@ -100,7 +99,7 @@ class BookingControllerTest {
         when(bookingService.getBookingById(Mockito.anyLong(), Mockito.anyLong())).thenReturn(bookingFullDto);
 
         mvc.perform(get("/bookings/{bookingId}", booking.getId())
-                        .header(HEADER_USER_ID, userId)
+                        .header("X-Sharer-User-Id", userId)
                         .characterEncoding(StandardCharsets.UTF_8)
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.ALL_VALUE))
@@ -124,7 +123,7 @@ class BookingControllerTest {
         when(bookingService.getBookingsByBookerId(Mockito.anyLong(), Mockito.anyString(), Mockito.any(Pageable.class))).thenReturn(bookingFullDtoList);
 
         mvc.perform(get("/bookings")
-                        .header(HEADER_USER_ID, userId)
+                        .header("X-Sharer-User-Id", userId)
                         .characterEncoding(StandardCharsets.UTF_8)
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.ALL_VALUE))
@@ -148,7 +147,7 @@ class BookingControllerTest {
         when(bookingService.getAllBookingsForItemsByOwnerId(Mockito.anyLong(), Mockito.anyString(), Mockito.any(Pageable.class))).thenReturn(bookingFullDtoList);
 
         mvc.perform(get("/bookings/owner")
-                        .header(HEADER_USER_ID, userId)
+                        .header("X-Sharer-User-Id", userId)
                         .characterEncoding(StandardCharsets.UTF_8)
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.ALL_VALUE))
