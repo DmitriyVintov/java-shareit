@@ -1,20 +1,29 @@
 package ru.practicum.shareit.request.model;
 
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
-import org.springframework.validation.annotation.Validated;
+import lombok.*;
+import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.model.User;
 
-import javax.validation.constraints.PastOrPresent;
+import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
-@Data
-@RequiredArgsConstructor
-@Validated
+@Entity
+@Table(name = "item_requests", schema = "public")
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ItemRequest {
-    private Integer id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
     private String description;
+    @ManyToOne(fetch = FetchType.LAZY)
     private User requestor;
-    @PastOrPresent
     private LocalDateTime created;
+    @Transient
+    private List<Item> items = new ArrayList<>();
 }

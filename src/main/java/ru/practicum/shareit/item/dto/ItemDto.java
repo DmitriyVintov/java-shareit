@@ -26,7 +26,7 @@ public class ItemDto {
     private BookingDto lastBooking;
     private BookingDto nextBooking;
     private List<CommentFullDto> comments;
-    //    private final Integer request;
+    private Long requestId;
 
     @Value
     public static class UserDto {

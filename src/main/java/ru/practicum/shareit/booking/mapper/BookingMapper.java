@@ -6,8 +6,11 @@ import org.mapstruct.factory.Mappers;
 import ru.practicum.shareit.booking.dto.BookingCreateDto;
 import ru.practicum.shareit.booking.dto.BookingFullDto;
 import ru.practicum.shareit.booking.model.Booking;
+import ru.practicum.shareit.item.mapper.ItemMapper;
 
-@Mapper
+import java.util.List;
+
+@Mapper(uses = {ItemMapper.class})
 public interface BookingMapper {
     BookingMapper INSTANCE = Mappers.getMapper(BookingMapper.class);
 
@@ -16,5 +19,5 @@ public interface BookingMapper {
     @Mapping(source = "itemId", target = "item.id")
     Booking toBookingFromBookingCreateDto(BookingCreateDto bookingCreateDto);
 
-    Booking toBookingFromBookingFullDto(BookingFullDto bookingFullDto);
+    List<BookingFullDto> toBookingsFullDto(List<Booking> bookings);
 }

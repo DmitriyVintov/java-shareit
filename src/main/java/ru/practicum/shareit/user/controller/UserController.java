@@ -20,28 +20,28 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping
-    public List<UserDto> get() {
+    public List<UserDto> getUsers() {
         List<UserDto> users = userService.getUsers();
         log.info(String.format("Поступил запрос на получение всех пользователей: %s", users));
         return users;
     }
 
     @GetMapping("/{userId}")
-    public UserDto getById(@PathVariable long userId) {
+    public UserDto getUsersById(@PathVariable long userId) {
         log.info(String.format("Поступил запрос на получение пользователя id %s", userId));
         return userService.getUserById(userId);
     }
 
     @PostMapping
     @Validated(Marker.OnCreate.class)
-    public UserDto add(@Valid @RequestBody UserDto userDto) {
+    public UserDto addUser(@Valid @RequestBody UserDto userDto) {
         log.info(String.format("Поступил запрос на создание пользователя: %s", userDto));
         return userService.addUser(userDto);
     }
 
     @PatchMapping("/{userId}")
-    public UserDto update(@PathVariable long userId,
-                          @Valid @RequestBody UserDto userDto) {
+    public UserDto updateUser(@PathVariable long userId,
+                              @Valid @RequestBody UserDto userDto) {
         log.info(String.format("Поступил запрос на обновление пользователя id %s: %s", userId, userDto));
         return userService.updateUser(userId, userDto);
     }

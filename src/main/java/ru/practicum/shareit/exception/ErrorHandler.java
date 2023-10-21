@@ -65,6 +65,15 @@ public class ErrorHandler {
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse handleDataIntegrityViolationException(final DataIntegrityViolationException e) {
+        log.error("Error 409. DataIntegrityViolation: {}", e.getMessage());
+        return new ErrorResponse(
+                e.getMessage()
+        );
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse handleDataAlreadyExistException(final DataAlreadyExistException e) {
         log.error("Error 409. DataAlreadyExist: {}", e.getMessage());
         return new ErrorResponse(
@@ -75,7 +84,7 @@ public class ErrorHandler {
     @ExceptionHandler
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResponse handleThrowable(final Throwable e) {
-        log.error("Error 500. UnknownError: {} -- {}", e.getMessage(), e.getStackTrace());
+        log.error("Error 500. UnknownError: {}", e.getMessage());
         return new ErrorResponse(e.getMessage()
         );
     }
