@@ -19,10 +19,8 @@ import ru.practicum.shareit.booking.service.BookingService;
 import ru.practicum.shareit.booking.service.BookingServiceImpl;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.exception.ValidationException;
-import ru.practicum.shareit.item.dto.ItemDto;
-import ru.practicum.shareit.item.mapper.ItemMapper;
 import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.item.service.ItemService;
+import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
@@ -43,14 +41,14 @@ class BookingServiceImplTest {
     @Mock
     private UserRepository userRepository;
     @Mock
-    private ItemService itemService;
+    private ItemRepository itemRepository;
     private final EasyRandom random = new EasyRandom();
     private final LocalDateTime yesterday = LocalDateTime.now().minusDays(1);
     private final LocalDateTime tomorrow = LocalDateTime.now().plusDays(1);
 
     @BeforeEach
     void setUp() {
-        bookingService = new BookingServiceImpl(bookingRepository, userRepository, itemService);
+        bookingService = new BookingServiceImpl(bookingRepository, userRepository, itemRepository);
     }
 
     @Test
@@ -60,10 +58,10 @@ class BookingServiceImplTest {
         Item item = random.nextObject(Item.class);
         User booker = random.nextObject(User.class);
         BookingCreateDto bookingCreateDto = new BookingCreateDto(1L, yesterday, tomorrow, item.getId());
-        ItemDto itemDto = ItemMapper.INSTANCE.toItemDto(item);
 
         when(userRepository.existsById(Mockito.anyLong())).thenReturn(true);
-        when(itemService.getItemById(Mockito.anyLong(), Mockito.anyLong())).thenReturn(itemDto);
+        when(itemRepository.existsById(Mockito.anyLong())).thenReturn(true);
+        when(itemRepository.findById(Mockito.anyLong())).thenReturn(Optional.of(item));
         when(userRepository.findById(Mockito.anyLong())).thenReturn(Optional.of(booker));
         when(bookingRepository.save(Mockito.any())).thenReturn(booking);
 
@@ -147,7 +145,7 @@ class BookingServiceImplTest {
         bookingCreateDto.setItemId(item.getId());
 
         when(userRepository.existsById(Mockito.anyLong())).thenReturn(true);
-        when(itemService.getItemById(Mockito.anyLong(), Mockito.anyLong())).thenThrow(NotFoundException.class);
+        when(itemRepository.existsById(Mockito.anyLong())).thenReturn(false);
 
         assertThrows(NotFoundException.class, () -> bookingService.addBooking(booker.getId(), bookingCreateDto));
     }
@@ -160,10 +158,10 @@ class BookingServiceImplTest {
         BookingCreateDto bookingCreateDto = new BookingCreateDto(booker.getId(), yesterday, tomorrow, item.getId());
         bookingCreateDto.setItemId(item.getId());
         item.setOwner(booker);
-        ItemDto itemDto = ItemMapper.INSTANCE.toItemDto(item);
 
         when(userRepository.existsById(Mockito.anyLong())).thenReturn(true);
-        when(itemService.getItemById(Mockito.anyLong(), Mockito.anyLong())).thenReturn(itemDto);
+        when(itemRepository.existsById(Mockito.anyLong())).thenReturn(true);
+        when(itemRepository.findById(Mockito.anyLong())).thenReturn(Optional.of(item));
 
         assertThrows(NotFoundException.class, () -> bookingService.addBooking(booker.getId(), bookingCreateDto));
     }
@@ -176,10 +174,10 @@ class BookingServiceImplTest {
         BookingCreateDto bookingCreateDto = new BookingCreateDto(booker.getId(), yesterday, tomorrow, item.getId());
         bookingCreateDto.setItemId(item.getId());
         item.setAvailable(false);
-        ItemDto itemDto = ItemMapper.INSTANCE.toItemDto(item);
 
         when(userRepository.existsById(booker.getId())).thenReturn(true);
-        when(itemService.getItemById(Mockito.anyLong(), Mockito.anyLong())).thenReturn(itemDto);
+        when(itemRepository.existsById(Mockito.anyLong())).thenReturn(true);
+        when(itemRepository.findById(Mockito.anyLong())).thenReturn(Optional.of(item));
 
         assertThrows(ValidationException.class, () -> bookingService.addBooking(booker.getId(), bookingCreateDto));
     }

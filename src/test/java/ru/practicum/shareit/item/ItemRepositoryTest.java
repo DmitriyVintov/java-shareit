@@ -12,6 +12,8 @@ import ru.practicum.shareit.request.repository.ItemRequestRepository;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @DataJpaTest
@@ -66,6 +68,17 @@ class ItemRepositoryTest {
         Item item = createItem(owner, itemRequest);
 
         assertEquals(item, itemRepository.findItemsByRequestId(itemRequest.getId()).get(0));
+    }
+
+    @Test
+    void findItemsByRequestIn() {
+        User owner = createUser();
+        User requestor = createUser();
+        ItemRequest itemRequest = createItemRequest(requestor);
+        List<ItemRequest> itemRequests = List.of(itemRequest);
+        Item item = createItem(owner, itemRequest);
+
+        assertEquals(item, itemRepository.findItemsByRequestIn(itemRequests).get(0));
     }
 
     private User createUser() {

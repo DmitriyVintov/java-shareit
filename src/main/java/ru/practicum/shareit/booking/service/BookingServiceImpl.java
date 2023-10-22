@@ -12,9 +12,8 @@ import ru.practicum.shareit.booking.model.StatusBooking;
 import ru.practicum.shareit.booking.repository.BookingRepository;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.exception.ValidationException;
-import ru.practicum.shareit.item.mapper.ItemMapper;
 import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.item.service.ItemService;
+import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
@@ -25,14 +24,15 @@ import java.util.List;
 public class BookingServiceImpl implements BookingService {
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
-    private final ItemService itemService;
+    private final ItemRepository itemRepository;
 
     @Override
     public BookingFullDto addBooking(long bookerId, BookingCreateDto bookingCreateDto) {
         checkExistUser(bookerId);
         checkDateEndIsAfterStart(bookingCreateDto);
         Long itemId = bookingCreateDto.getItemId();
-        Item item = ItemMapper.INSTANCE.toItem(itemService.getItemById(itemId, bookerId));
+        checkExistItem(itemId);
+        Item item = itemRepository.findById(itemId).get();
         Long ownerId = item.getOwner().getId();
         checkMatchBookerAndOwner(bookerId, ownerId);
         checkAvailabilityItem(item);
@@ -125,6 +125,13 @@ public class BookingServiceImpl implements BookingService {
     private void checkExistUser(long userId) {
         if (!userRepository.existsById(userId)) {
             String errorMessage = String.format("Пользователь id %s не найден", userId);
+            throw new NotFoundException(errorMessage);
+        }
+    }
+
+    private void checkExistItem(long itemId) {
+        if (!itemRepository.existsById(itemId)) {
+            String errorMessage = String.format("Вещь id %s не найдена", itemId);
             throw new NotFoundException(errorMessage);
         }
     }

@@ -24,7 +24,7 @@ class ItemRequestRepositoryTest {
         User requestor = createUser();
         ItemRequest itemRequest = createItemRequest(requestor);
 
-        assertEquals(itemRequest, itemRequestRepository.findAllByRequestorId(requestor.getId()).get(0));
+        assertEquals(itemRequest, itemRequestRepository.findByRequestorId(requestor.getId()).get(0));
     }
 
     @Test
@@ -33,7 +33,7 @@ class ItemRequestRepositoryTest {
         User requestor2 = createUser();
         ItemRequest itemRequest = createItemRequest(requestor1);
 
-        assertEquals(itemRequest, itemRequestRepository.findAllByRequestorIdNot(requestor2.getId()).get(0));
+        assertEquals(itemRequest, itemRequestRepository.findByRequestorIdNot(requestor2.getId()).get(0));
     }
 
     private User createUser() {

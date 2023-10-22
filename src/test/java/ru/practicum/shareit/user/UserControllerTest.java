@@ -18,6 +18,7 @@ import ru.practicum.shareit.user.service.UserService;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -116,7 +117,7 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.name").value(userDto.getName()))
                 .andExpect(jsonPath("$.email").value(userDto.getEmail()));
 
-        Mockito.verify(userService).updateUser(Mockito.anyLong(), Mockito.any(UserDto.class));
+        Mockito.verify(userService, times(1)).updateUser(Mockito.anyLong(), Mockito.any(UserDto.class));
     }
 
     @Test

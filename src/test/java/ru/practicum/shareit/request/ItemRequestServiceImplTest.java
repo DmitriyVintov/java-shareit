@@ -85,8 +85,8 @@ class ItemRequestServiceImplTest {
         List<ItemRequestFullDto> itemRequestsFullDto = ItemRequestMapper.INSTANCE.toItemRequestsFullDto(itemRequests);
 
         when(userRepository.existsById(Mockito.anyLong())).thenReturn(true);
-        when(itemRepository.findItemsByRequestId(itemRequest.getId())).thenReturn(items);
-        when(itemRequestRepository.findAllByRequestorId(Mockito.anyLong())).thenReturn(itemRequests);
+        when(itemRepository.findItemsByRequestIn(Mockito.any())).thenReturn(items);
+        when(itemRequestRepository.findByRequestorId(Mockito.anyLong())).thenReturn(itemRequests);
 
         assertEquals(itemRequestsFullDto, itemRequestService.getItemRequestsByRequestorId(requestor.getId()));
     }
@@ -105,8 +105,8 @@ class ItemRequestServiceImplTest {
         List<ItemRequestFullDto> itemRequestsFullDto = ItemRequestMapper.INSTANCE.toItemRequestsFullDto(itemRequests);
 
         when(userRepository.existsById(Mockito.anyLong())).thenReturn(true);
-        when(itemRepository.findItemsByRequestId(itemRequest.getId())).thenReturn(items);
-        when(itemRequestRepository.findAllByRequestorIdNot(Mockito.anyLong())).thenReturn(itemRequests);
+        when(itemRepository.findItemsByRequestIn(Mockito.any())).thenReturn(items);
+        when(itemRequestRepository.findByRequestorIdNot(Mockito.anyLong())).thenReturn(itemRequests);
 
         assertEquals(itemRequestsFullDto, itemRequestService.getItemRequestsAll(1L, Pageable.ofSize(3)));
     }

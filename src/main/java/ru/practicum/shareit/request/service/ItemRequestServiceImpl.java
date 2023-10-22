@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.exception.NotFoundException;
+import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.request.dto.ItemRequestCreateDto;
 import ru.practicum.shareit.request.dto.ItemRequestFullDto;
@@ -14,7 +15,9 @@ import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -37,17 +40,15 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     @Override
     public List<ItemRequestFullDto> getItemRequestsByRequestorId(long requestorId) {
         checkUserById(requestorId);
-        return ItemRequestMapper.INSTANCE.toItemRequestsFullDto(itemRequestRepository.findAllByRequestorId(requestorId).stream()
-                .peek(itemRequest -> itemRequest.setItems(itemRepository.findItemsByRequestId(itemRequest.getId())))
-                .collect(Collectors.toList()));
+        List<ItemRequest> itemRequests = itemRequestRepository.findByRequestorId(requestorId);
+        return getItemsByRequestIn(itemRequests);
     }
 
     @Override
     public List<ItemRequestFullDto> getItemRequestsAll(long userId, Pageable pageable) {
         checkUserById(userId);
-        return ItemRequestMapper.INSTANCE.toItemRequestsFullDto(itemRequestRepository.findAllByRequestorIdNot(userId).stream()
-                .peek(itemRequest -> itemRequest.setItems(itemRepository.findItemsByRequestId(itemRequest.getId())))
-                .collect(Collectors.toList()));
+        List<ItemRequest> itemRequests = itemRequestRepository.findByRequestorIdNot(userId);
+        return getItemsByRequestIn(itemRequests);
     }
 
     @Override
@@ -73,5 +74,15 @@ public class ItemRequestServiceImpl implements ItemRequestService {
             String errorMessage = String.format("Запрос вещи id %s не найден", requestId);
             throw new NotFoundException(errorMessage);
         }
+    }
+
+    private List<ItemRequestFullDto> getItemsByRequestIn(List<ItemRequest> itemRequests) {
+        Map<ItemRequest, List<Item>> collect = itemRepository.findItemsByRequestIn(itemRequests)
+                .stream()
+                .collect(Collectors.groupingBy(Item::getRequest, Collectors.toList()));
+        itemRequests.forEach(itemRequest ->
+                itemRequest.setItems(collect.getOrDefault(itemRequest, Collections.emptyList()))
+        );
+        return ItemRequestMapper.INSTANCE.toItemRequestsFullDto(itemRequests);
     }
 }
