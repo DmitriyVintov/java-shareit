@@ -1,7 +1,7 @@
 package ru.practicum.shareit.item.service;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.model.StatusBooking;
@@ -17,9 +17,10 @@ import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.CommentRepository;
 import ru.practicum.shareit.item.repository.ItemRepository;
-import ru.practicum.shareit.user.mapper.UserMapper;
+import ru.practicum.shareit.request.model.ItemRequest;
+import ru.practicum.shareit.request.repository.ItemRequestRepository;
 import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.service.UserService;
+import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -28,17 +29,17 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class ItemServiceImpl implements ItemService {
     private final ItemRepository itemRepository;
-    private final UserService userService;
+    private final UserRepository userRepository;
     private final BookingRepository bookingRepository;
     private final CommentRepository commentRepository;
+    private final ItemRequestRepository itemRequestRepository;
 
     @Override
-    public List<ItemDto> getItems(long userId) {
+    public List<ItemDto> getItems(long ownerId, Pageable pageable) {
         LocalDateTime currentTime = LocalDateTime.now();
-        return itemRepository.findAllByOwnerIdOrderById(userId).stream()
+        return itemRepository.findAllByOwnerIdOrderById(ownerId, pageable).stream()
                 .map(item -> {
                     item.setLastBooking(bookingRepository.findFirstBookingByItemIdAndStatusNotAndStartBeforeOrderByStartDesc(
                             item.getId(), StatusBooking.REJECTED, currentTime
@@ -53,17 +54,17 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public ItemDto getItemById(long itemId, long userId) {
+    public ItemDto getItemById(long itemId, long ownerId) {
         LocalDateTime currentTime = LocalDateTime.now();
         return ItemMapper.INSTANCE.toItemDto(itemRepository.findById(itemId)
                 .map(item -> {
-                    List<Booking> lastBooking = bookingRepository.findLastBookingByOwnerId(itemId, userId, StatusBooking.REJECTED, currentTime);
+                    List<Booking> lastBooking = bookingRepository.findLastBookingByOwnerId(itemId, ownerId, StatusBooking.REJECTED, currentTime);
                     if (!lastBooking.isEmpty()) {
                         item.setLastBooking(lastBooking.get(0));
                     } else {
                         item.setLastBooking(null);
                     }
-                    List<Booking> nextBooking = bookingRepository.findNextBookingByOwnerId(itemId, userId, StatusBooking.REJECTED, currentTime);
+                    List<Booking> nextBooking = bookingRepository.findNextBookingByOwnerId(itemId, ownerId, StatusBooking.REJECTED, currentTime);
                     if (!nextBooking.isEmpty()) {
                         item.setNextBooking(nextBooking.get(0));
                     } else {
@@ -73,18 +74,22 @@ public class ItemServiceImpl implements ItemService {
                     return item;
                 }).orElseThrow(() -> {
                     String errorMessage = String.format("Вещь id %s не найдена", itemId);
-                    log.error(errorMessage);
                     return new NotFoundException(errorMessage);
                 }));
     }
 
     @Override
-    public ItemDto addItem(long userId, ItemDto itemDto) {
-        userService.getUserById(userId);
+    public ItemDto addItem(long ownerId, ItemDto itemDto) {
+        checkUserById(ownerId);
         Item item = ItemMapper.INSTANCE.toItem(itemDto);
-        User owner = UserMapper.INSTANCE.toUser(userService.getUserById(userId));
-        owner.setId(userId);
+        User owner = userRepository.findById(ownerId).get();
         item.setOwner(owner);
+        Long requestId = itemDto.getRequestId();
+        if (requestId != null) {
+            checkExistItemRequest(requestId);
+            ItemRequest itemRequest = itemRequestRepository.findById(requestId).get();
+            item.setRequest(itemRequest);
+        }
         return ItemMapper.INSTANCE.toItemDto(itemRepository.save(item));
     }
 
@@ -92,8 +97,8 @@ public class ItemServiceImpl implements ItemService {
     public CommentFullDto addComment(long userId, long itemId, CommentCreateDto commentCreateDto) {
         LocalDateTime currentTime = LocalDateTime.now();
         checkBookingByItemAndUserAndStatusAndPast(userId, itemId);
-        User author = UserMapper.INSTANCE.toUser(userService.getUserById(userId));
-        Item item = ItemMapper.INSTANCE.toItem(getItemById(itemId, userId));
+        User author = userRepository.findById(userId).get();
+        Item item = itemRepository.findById(itemId).get();
         Comment comment = CommentMapper.INSTANCE.toComment(commentCreateDto);
         comment.setAuthor(author);
         comment.setItem(item);
@@ -102,10 +107,10 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public ItemDto updateItem(long userId, ItemDto itemDto, long itemId) {
-        userService.getUserById(userId);
-        checkItemByOwner(userId, itemId);
-        Item item = ItemMapper.INSTANCE.toItem(getItemById(itemId, userId));
+    public ItemDto updateItem(long ownerId, ItemDto itemDto, long itemId) {
+        checkUserById(ownerId);
+        checkItemByOwner(ownerId, itemId);
+        Item item = itemRepository.findByIdAndOwnerId(itemId, ownerId).get();
         item.setId(itemId);
         if (itemDto.getName() != null) {
             item.setName(itemDto.getName());
@@ -116,44 +121,47 @@ public class ItemServiceImpl implements ItemService {
         if (itemDto.getAvailable() != null) {
             item.setAvailable(itemDto.getAvailable());
         }
-        User owner = UserMapper.INSTANCE.toUser(userService.getUserById(userId));
-        owner.setId(userId);
+        User owner = userRepository.findById(ownerId).get();
+        owner.setId(ownerId);
         item.setOwner(owner);
         return ItemMapper.INSTANCE.toItemDto(itemRepository.save(item));
     }
 
     @Override
-    public void deleteItem(long userId, long itemId) {
-        userService.getUserById(userId);
-        checkItemByOwner(userId, itemId);
-        itemRepository.delete(ItemMapper.INSTANCE.toItem(getItemById(itemId, userId)));
-    }
-
-    @Override
-    public List<ItemDto> search(long userId, String text) {
+    public List<ItemDto> search(long userId, String text, Pageable pageable) {
         if (text.isBlank()) {
             return new ArrayList<>();
         }
-        return itemRepository.search(text).stream()
+        return itemRepository.search(text, pageable).stream()
                 .map(ItemMapper.INSTANCE::toItemDto)
                 .collect(Collectors.toList());
     }
 
+    private void checkUserById(long userId) {
+        if (!userRepository.existsById(userId)) {
+            String errorMessage = String.format("Пользователь id %s не найден", userId);
+            throw new NotFoundException(errorMessage);
+        }
+    }
+
+    private void checkExistItemRequest(Long requestId) {
+        if (!itemRequestRepository.existsById(requestId)) {
+            String errorMessage = String.format("Запрос на создание id %s не найден", requestId);
+            throw new NotFoundException(errorMessage);
+        }
+    }
+
     private void checkItemByOwner(long userId, long itemId) {
-        itemRepository.findAllByIdAndOwnerId(itemId, userId).stream()
-                .findFirst()
-                .orElseThrow(() -> {
-                    String errorMessage = String.format("У пользователя id %s вещь id %s не найдена", userId, itemId);
-                    log.error(errorMessage);
-                    return new NotFoundException(errorMessage);
-                });
+        if (!itemRepository.existsByIdAndOwnerId(itemId, userId)) {
+            String errorMessage = String.format("У пользователя id %s вещь id %s не найдена", userId, itemId);
+            throw new NotFoundException(errorMessage);
+        }
     }
 
     private void checkBookingByItemAndUserAndStatusAndPast(long userId, long itemId) {
         LocalDateTime currentTime = LocalDateTime.now();
         if (!bookingRepository.existsBookingByBookerIdAndItemIdAndStatusAndStartBefore(userId, itemId, StatusBooking.APPROVED, currentTime)) {
             String errorMessage = String.format("Нет бронирований с вещью %s и пользователем %s", itemId, userId);
-            log.error(errorMessage);
             throw new ValidationException(errorMessage);
         }
     }
