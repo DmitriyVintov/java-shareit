@@ -23,7 +23,6 @@ import ru.practicum.shareit.item.mapper.CommentMapper;
 import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.service.ItemService;
 
-import javax.validation.ConstraintViolationException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -138,23 +137,6 @@ class ItemControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.ALL_VALUE))
                 .andExpect(status().isConflict());
-    }
-
-    @Test
-    @DisplayName("Получение ошибки валидации при создании вещи")
-    void shouldThrowExceptionWhenAddItemIfDescriptionEmpty() throws Exception {
-        ItemDto itemDto = random.nextObject(ItemDto.class);
-        itemDto.setDescription(null);
-        long userId = 1L;
-        when(itemService.addItem(Mockito.anyLong(), Mockito.any(ItemDto.class))).thenThrow(ConstraintViolationException.class);
-
-        mvc.perform(post("/items")
-                        .header("X-Sharer-User-Id", userId)
-                        .content(mapper.writeValueAsString(itemDto))
-                        .characterEncoding(StandardCharsets.UTF_8)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.ALL_VALUE))
-                .andExpect(status().isBadRequest());
     }
 
     @Test
